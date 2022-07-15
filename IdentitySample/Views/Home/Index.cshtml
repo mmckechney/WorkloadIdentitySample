@@ -1,0 +1,30 @@
+﻿@{
+    ViewBag.Title = "Workload Identity with Managed Identity";
+}
+
+<div class="jumbotron">
+    <h1>Workload Identity Sample App</h1>
+    <p class="lead">This app demonstrates the use of Workload identity with Azure Managed Identity as a means to authenticate to Azure services</p>
+</div>
+<div>
+    <h1>Identity Use results:</h1>
+    @if(ViewBag.KvSuccess)
+    {
+    <h3 style="color:green">Success!</h3>
+    }
+    else
+    {
+    <h3 style="color:red">Failed to use Identity</h3>
+    }
+    <h2>@ViewBag.Message</h2>
+
+    @if(ViewBag.KvSuccess)
+    {
+    <h3>@ViewBag.Secret</h3>
+    }
+    else
+    {
+    <p>@ViewBag.Secret</p>
+    }
+
+</div>
