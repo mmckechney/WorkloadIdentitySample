@@ -50,3 +50,5 @@ After running the deployment script, you should have two pods running `samplewit
 
 ## How it works
 
+For detailed information on Azure AD Workload Identity, please see the [official documentation](https://docs.microsoft.com/en-us/samples/azure-samples/azure-ad-workload-identity/azure-ad-workload-identity/)
+

@@ -64,14 +64,12 @@ az aks get-credentials --name $aksClusterName --resource-group $resourceGroupNam
 ##Get cluster information
 Write-Host "Collecting cluster information for: $aksClusterName" -ForegroundColor DarkGreen
 $clusterInfo = (az aks show --name  $aksClusterName --resource-group $resourceGroupName)  | ConvertFrom-Json -AsHashtable
-$principalId = $clusterInfo.identity.principalId
 $clientId = $clusterInfo.identityProfile.kubeletidentity.clientId
 $nodeResourceGroup = $clusterInfo.nodeResourceGroup
 $vaultResourceGroup = $resourceGroupName
 $context = (az account show)  | ConvertFrom-Json -AsHashtable
 $subscriptionId = $context.id
-$tenantId = $context.tenantId
-$userAssignedIdentity = $prefix + "identity"
+
 
 ##Add role assignments
 Write-Host "Adding Role Assignments" -ForegroundColor DarkGreen
@@ -91,8 +89,11 @@ az keyvault set-policy -n $keyVaultName --secret-permissions get --spn $userAssi
 az keyvault set-policy -n $keyVaultName --key-permissions get --spn $userAssignedClientId -o table
 az keyvault set-policy -n $keyVaultName --certificate-permissions get --spn $userAssignedClientId -o table
 
+##############################################################
+# Configure the Service Account and Identity
+##############################################################
 
-# geT OIDC 
+# Get OIDC issuer URl 
 $AKS_OIDC_ISSUER= az aks show -n $aksClusterName -g $resourceGroupName --query "oidcIssuerProfile.issuerUrl" -o tsv
 
 
@@ -119,6 +120,10 @@ Write-Host "Setting OIDC issuer associated with $SERVICE_ACCOUNT_NAME and identi
 $federatedIdName="federated-name"
 $url = "/subscriptions/$($subscriptionId)/resourceGroups/$($resourceGroupName)/providers/Microsoft.ManagedIdentity/userAssignedIdentities/$($userAssignedIdentity)/federatedIdentityCredentials/$($federatedIdName)?api-version=2022-01-31-PREVIEW" 
 az rest --method put --url $url --headers "Content-Type=application/json" --body "{'properties':{'issuer':'$($AKS_OIDC_ISSUER)','subject':'system:serviceaccount:$($SERVICE_ACCOUNT_NAMESPACE):$($SERVICE_ACCOUNT_NAME)','audiences':['api://AzureADTokenExchange'] }}"
+
+##############################################################
+# Deploy sample images with and without identity associated
+##############################################################
 
 Write-Host "Deploying sample Pod 'samplewithidentity' with Service Account assigment - to test successful use case " -ForegroundColor DarkGreen
 $withIdentity=
