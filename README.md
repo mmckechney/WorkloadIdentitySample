@@ -52,3 +52,14 @@ After running the deployment script, you should have two pods running `samplewit
 
 For detailed information on Azure AD Workload Identity, please see the [official documentation](https://docs.microsoft.com/en-us/samples/azure-samples/azure-ad-workload-identity/azure-ad-workload-identity/)
 
+From a code perspective, the Key Vault "magic" is found in the HomeController.cs:
+
+`Line 29:  var _tokenCred = new DefaultAzureCredential();`
+
+-	Retrieves the token based on the environment. For instance, if running locally, it would use you az cli or PowerShell token, but in the case of AKS, uses the Managed Identity associated with the workload. 
+
+`Line 34:  var resp = _secretClient.GetSecret(secretName);`
+
+-	Performs the token retrieval and uses that token to access Key Vault and retrieve the secret. The ability to retrieve the token is base on the RBAC role assignments to the Key Vault policy (see the [deploy.ps1](deploy.ps1) script for details)
+
+
