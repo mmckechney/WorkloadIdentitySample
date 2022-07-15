@@ -6,7 +6,7 @@ FROM mcr.microsoft.com/dotnet/framework/sdk:4.8-windowsservercore-ltsc2019 AS bu
 COPY . ./src/
 WORKDIR /src
 RUN nuget restore
-RUN msbuild IdentitySample.sln /t:ResolveReferences;_WPPCopyWebApplication /p:Configuration=Release /p:BuildingProject=true;OutDir=..\PUBLISH
+RUN msbuild IdentitySample.sln /t:ResolveReferences /t:_WPPCopyWebApplication /p:Configuration=Release /p:BuildingProject=true /p:OutDir=..\PUBLISH
 
 
 FROM mcr.microsoft.com/dotnet/framework/aspnet:4.8-windowsservercore-ltsc2019 AS runtime
