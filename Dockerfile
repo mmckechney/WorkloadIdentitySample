@@ -6,12 +6,12 @@ WORKDIR /app
 
 # copy csproj and restore as distinct layers
 COPY *.sln .
-COPY IdentitySample/src/*.csproj ./src/
-COPY IdentitySample/src/*.config ./src/
+COPY /IdentitySample/*.csproj ./src/
+COPY /IdentitySample/*.config ./src/
 RUN nuget restore
 
 # copy everything else and build app
-COPY IdentitySample/src/. ./src/
+COPY /IdentitySample/. ./src/
 WORKDIR /app/aspnetmvcapp
 RUN msbuild /p:Configuration=Release -r:False
 
