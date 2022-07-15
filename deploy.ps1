@@ -136,7 +136,7 @@ metadata:
 spec:
    serviceAccountName: $($SERVICE_ACCOUNT_NAME)
    containers:
-     - image: $($acrName).azurecr.io/identitysample:latest
+     - image: ghcr.io/mmckechney/workloadidentitysample/workloadidentitysample:latest
        name: samplewithidentity
    nodeSelector:
      kubernetes.io/os: windows
@@ -160,7 +160,7 @@ metadata:
    namespace: $($SERVICE_ACCOUNT_NAMESPACE)
 spec:
    containers:
-     - image: $($acrName).azurecr.io/identitysample:latest
+     - image: ghcr.io/mmckechney/workloadidentitysample/workloadidentitysample:latest
        name: samplenoidentity
    nodeSelector:
      kubernetes.io/os: windows
