@@ -52,7 +52,7 @@ After running the deployment script, you should have two pods running `samplewit
 
 For detailed information on Azure AD Workload Identity, please see the [official documentation](https://docs.microsoft.com/en-us/samples/azure-samples/azure-ad-workload-identity/azure-ad-workload-identity/)
 
-From a code perspective, the Key Vault "magic" is found in the HomeController.cs:
+From a code perspective, the Key Vault "magic" is found in the [HomeController.cs](/IdentitySample/Controllers/HomeController.cs):
 
 `Line 29:  var _tokenCred = new DefaultAzureCredential();`
 
