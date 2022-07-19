@@ -16,6 +16,8 @@ $aksVnet = $prefix + "vnet"
 $aksSubnet = "akssubnet"
 $containerRegistryName = $prefix + "containerregistry"
 $nsgName = $prefix + "nsg"
+$SERVICE_ACCOUNT_NAMESPACE="default"
+$SERVICE_ACCOUNT_NAME="workload-identity-sa"
 
 # Install the aks-preview extension
 Write-Host "Adding AKS preview extension" -ForegroundColor DarkGreen
@@ -98,8 +100,7 @@ $AKS_OIDC_ISSUER= az aks show -n $aksClusterName -g $resourceGroupName --query "
 
 
 #create Kubernetes service principal
-$SERVICE_ACCOUNT_NAMESPACE="default"
-$SERVICE_ACCOUNT_NAME="workload-identity-sa"
+
 Write-Host "Creating Kubernetes Service Principal $SERVICE_ACCOUNT_NAME associated with $userAssignedIdentity" -ForegroundColor DarkGreen
 
 
@@ -138,6 +139,9 @@ spec:
    containers:
      - image: ghcr.io/mmckechney/workloadidentitysample/workloadidentitysample:latest
        name: samplewithidentity
+       env:
+       - name: KeyVaultName
+         value: $keyVaultName
    nodeSelector:
      kubernetes.io/os: windows
 "@
@@ -162,6 +166,9 @@ spec:
    containers:
      - image: ghcr.io/mmckechney/workloadidentitysample/workloadidentitysample:latest
        name: samplenoidentity
+       env:
+       - name: KeyVaultName
+         value: $keyVaultName
    nodeSelector:
      kubernetes.io/os: windows
 "@

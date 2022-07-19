@@ -58,7 +58,7 @@ From a code perspective, the Key Vault "magic" is found in the [HomeController.c
 
 -	Retrieves the token based on the environment. For instance, if running locally, it would use you az cli or PowerShell token, but in the case of AKS, uses the Managed Identity associated with the workload. 
 
-`Line 34:  var resp = _secretClient.GetSecret(secretName);`
+`Line 35:  var resp = _secretClient.GetSecret(secretName);`
 
 -	Performs the token retrieval and uses that token to access Key Vault and retrieve the secret. The ability to retrieve the token is base on the RBAC role assignments to the Key Vault policy (see the [deploy.ps1](deploy.ps1) script for details)
 

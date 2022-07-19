@@ -27,7 +27,8 @@ namespace IdentitySample.Controllers
             try
             {
                 var _tokenCred = new DefaultAzureCredential();
-                var kvName = ConfigurationManager.AppSettings["KeyVault.Name"];
+                var kvName = Environment.GetEnvironmentVariable("KeyVaultName");
+                if(string.IsNullOrWhiteSpace(kvName)) kvName = ConfigurationManager.AppSettings["KeyVault.Name"];
                 var secretName = ConfigurationManager.AppSettings["KeyVault.SecretName"];
                 var keyVaultUrl = $"https://{kvName}.vault.azure.net/";
                 var _secretClient = new SecretClient(vaultUri: new Uri(keyVaultUrl), credential: _tokenCred);
