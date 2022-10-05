@@ -8,6 +8,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{63F866C0-3979-4F4D-87B7-A65EFBA04E5B}"
 	ProjectSection(SolutionItems) = preProject
 		deploy.ps1 = deploy.ps1
+		.github\workflows\docker-publish.yml = .github\workflows\docker-publish.yml
 		Dockerfile = Dockerfile
 		README.md = README.md
 	EndProjectSection

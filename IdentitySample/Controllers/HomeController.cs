@@ -24,13 +24,15 @@ namespace IdentitySample.Controllers
  
         private (bool, string, string) GetKeyVaultSecret()
         {
+            string keyVaultUrl = "";
+            string secretName = "";
             try
             {
                 var _tokenCred = new DefaultAzureCredential();
                 var kvName = Environment.GetEnvironmentVariable("KeyVaultName");
                 if(string.IsNullOrWhiteSpace(kvName)) kvName = ConfigurationManager.AppSettings["KeyVault.Name"];
-                var secretName = ConfigurationManager.AppSettings["KeyVault.SecretName"];
-                var keyVaultUrl = $"https://{kvName}.vault.azure.net/";
+                secretName = ConfigurationManager.AppSettings["KeyVault.SecretName"];
+                keyVaultUrl = $"https://{kvName}.vault.azure.net/";
                 var _secretClient = new SecretClient(vaultUri: new Uri(keyVaultUrl), credential: _tokenCred);
                 var resp = _secretClient.GetSecret(secretName);
                 if (!resp.GetRawResponse().IsError)
@@ -39,7 +41,7 @@ namespace IdentitySample.Controllers
                 }
                 else
                 {
-                    return (true,"Identity assigned properly, but failed to Get Secret!!","");
+                    return (true,"Identity assigned properly, but failed to Get Secret!!",resp.GetRawResponse().ReasonPhrase);
                 }
             }catch(RequestFailedException rfe)
             {
@@ -47,8 +49,16 @@ namespace IdentitySample.Controllers
                 {
                     return (false,"Unable to get secret from Key Vault!",rfe.Message);
                     
+                }else if(rfe.ErrorCode == "VaultNotFound")
+                {
+                    return (false, $"The specified Key Vault {keyVaultUrl} was not found. Please check your environment variables for the 'KeyVaultName' key", rfe.Message);
                 }
-            }catch(Exception exe)
+                else
+                {
+                    return (false, "Key Vault request error", rfe.Message);
+                }
+            }
+            catch(Exception exe)
             {
                 return (false,"Something went wrong!",exe.Message);
                
