@@ -28,8 +28,23 @@ az extension add --name aks-preview
 az extension update --name aks-preview
 
 # Register the preview feature
-az feature registration create --namespace Microsoft.ContainerService --name EnableWorkloadIdentityPreview -o table
+Write-Host "Registering AKS preview features" -ForegroundColor DarkGreen
+az feature register --namespace "Microsoft.ContainerService" --name "EnableWorkloadIdentityPreview" -o table
+az feature register --namespace "Microsoft.ContainerService" --name "EnableOIDCIssuerPreview" -o table
+while(( az feature list -o table --query "[?contains(name, 'Microsoft.ContainerService/EnableWorkloadIdentityPreview')].properties.state" -o tsv) -eq "Registering")
+{
+    Write-Host "Waiting for 'EnableWorkloadIdentityPreview' feature registration to complete..."
+    Start-Sleep -s 10
+}
+while(( az feature list -o table --query "[?contains(name, 'Microsoft.ContainerService/EnableOIDCIssuerPreview')].properties.state" -o tsv) -eq "Registering")
+{
+    Write-Host "Waiting for 'EnableWorkloadIdentityPreview' feature registration to complete..."
+    Start-Sleep -s 10
+}
+az provider register --namespace Microsoft.ContainerService
 
+
+ 
 Write-Host "Creating Resource  Group $resourceGroupName" -ForegroundColor DarkGreen
 az group create --name "$resourceGroupName"  --location $location -o table
 
