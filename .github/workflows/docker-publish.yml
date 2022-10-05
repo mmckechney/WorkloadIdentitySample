@@ -55,6 +55,6 @@ jobs:
           image: workloadidentitysample
           tags: latest
           registry: ghcr.io
-          platform: windows/x64
+          platform: windows/amd64
           username: ${{ secrets.GHCR_USERNAME }}
           password: ${{ secrets.GHCR_TOKEN }}
