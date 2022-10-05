@@ -2,6 +2,7 @@ param
 (
     [string] $prefix,
     [string] $resourceGroupName,
+    [string] $location,
     [bool] $includeContainerRegistry
 )
 Write-Host "Create AKS cluster and associated services for sample..."  -ForegroundColor Cyan
@@ -18,18 +19,26 @@ $containerRegistryName = $prefix + "containerregistry"
 $nsgName = $prefix + "nsg"
 $SERVICE_ACCOUNT_NAMESPACE="default"
 $SERVICE_ACCOUNT_NAME="workload-identity-sa"
+$federatedIdName="federated-name"
+$k8sNamespace=$SERVICE_ACCOUNT_NAMESPACE
 
 # Install the aks-preview extension
 Write-Host "Adding AKS preview extension" -ForegroundColor DarkGreen
 az extension add --name aks-preview
 az extension update --name aks-preview
 
+# Register the preview feature
+az feature registration create --namespace Microsoft.ContainerService --name EnableWorkloadIdentityPreview -o table
+
 Write-Host "Creating Resource  Group $resourceGroupName" -ForegroundColor DarkGreen
-az group create --name "$resourceGroupName"  --location westcentralus -o table
+az group create --name "$resourceGroupName"  --location $location -o table
 
 Write-Host "Creating KeyVault  $keyVaultName and adding sample secret 'MySecret'" -ForegroundColor DarkGreen
 az keyvault create --resource-group "$resourceGroupName" --name $keyVaultName  -o table  
 az keyvault secret set --vault-name "$keyVaultName" --name "MySecret" --value "My Super Secret Secret from Key Vault" -o table
+
+Write-Host "Creating user assigned identity to be used with Kubernetes Service Principal: $userAssignedIdentity" -ForegroundColor DarkGreen
+$userAssignedClientId = az identity create -g $resourceGroupName -n $userAssignedIdentity -o tsv --query "clientId"
 
 if($includeContainerRegistry)
 {
@@ -47,7 +56,7 @@ $aksVnetId = az network vnet show --resource-group $resourceGroupName --name $ak
 $aksSubnetId = az network vnet subnet show --resource-group $resourceGroupName --vnet-name $aksVnet --name $aksSubnet --query id -o tsv
 
 Write-Host "Creating AKS Cluster $aksClusterName with Workload Identity and OIDC issuer enabled" -ForegroundColor DarkGreen
-az aks create --name $aksClusterName --resource-group $resourceGroupName --enable-oidc-issuer --enable-workload-identity --network-plugin azure --vnet-subnet-id $aksSubnetId --yes -o table
+az aks create --name $aksClusterName --resource-group $resourceGroupName --enable-oidc-issuer --enable-workload-identity --network-plugin azure --vnet-subnet-id $aksSubnetId  --generate-ssh-keys --yes -o table
 
 if($includeContainerRegistry)
 {
@@ -80,12 +89,7 @@ az role assignment create --role "Managed Identity Operator" --assignee $clientI
 az role assignment create --role "Virtual Machine Contributor" --assignee $clientId --scope /subscriptions/$subscriptionId/resourcegroups/$nodeResourceGroup  -o table
 az role assignment create --role "Contributor" --assignee $clientId --scope $aksVnetId -o table
 
-# Identity should alread exist, but just in case...
-Write-Host "Creating user assigned identity to be used with Kubernetes Service Principal: $userAssignedIdentity" -ForegroundColor DarkGreen
-$userAssignedClientId = az identity create -g $resourceGroupName -n $userAssignedIdentity -o tsv --query "clientId"
-
-
-# Set Policy
+# Set Key Vault Policy
 Write-Host "Setting Key Vault policy for Identity $userAssignedIdentity for $keyVaultName" -ForegroundColor DarkGreen
 az keyvault set-policy -n $keyVaultName --secret-permissions get --spn $userAssignedClientId -o table
 az keyvault set-policy -n $keyVaultName --key-permissions get --spn $userAssignedClientId -o table
@@ -100,9 +104,7 @@ $AKS_OIDC_ISSUER= az aks show -n $aksClusterName -g $resourceGroupName --query "
 
 
 #create Kubernetes service principal
-
 Write-Host "Creating Kubernetes Service Principal $SERVICE_ACCOUNT_NAME associated with $userAssignedIdentity" -ForegroundColor DarkGreen
-
 
 $svcAcctYml = "
  apiVersion: v1
@@ -118,9 +120,8 @@ $svcAcctYml = "
 $svcAcctYml | kubectl apply -f -
 
 Write-Host "Setting OIDC issuer associated with $SERVICE_ACCOUNT_NAME and identity $userAssignedIdentity" -ForegroundColor DarkGreen
-$federatedIdName="federated-name"
-$url = "/subscriptions/$($subscriptionId)/resourceGroups/$($resourceGroupName)/providers/Microsoft.ManagedIdentity/userAssignedIdentities/$($userAssignedIdentity)/federatedIdentityCredentials/$($federatedIdName)?api-version=2022-01-31-PREVIEW" 
-az rest --method put --url $url --headers "Content-Type=application/json" --body "{'properties':{'issuer':'$($AKS_OIDC_ISSUER)','subject':'system:serviceaccount:$($SERVICE_ACCOUNT_NAMESPACE):$($SERVICE_ACCOUNT_NAME)','audiences':['api://AzureADTokenExchange'] }}"
+az identity federated-credential create --name $federatedIdName --identity-name $userAssignedIdentity --resource-group $resourceGroupName --issuer $AKS_OIDC_ISSUER --subject system:serviceaccount:$($k8sNamespace):$($SERVICE_ACCOUNT_NAME)
+
 
 ##############################################################
 # Deploy sample images with and without identity associated
@@ -178,6 +179,8 @@ $noIdentity | kubectl apply -f -
 kubectl get pods -o wide
 #Port forward this pod to see that the secret is not retrieved and permission is denied
 # kubectl port-forward pod/samplenoidentity 8081:80
+
+#kubectl port-forward pod/samplewithidentity 8081:80
 
 
 
